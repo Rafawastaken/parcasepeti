@@ -4,15 +4,13 @@ import json
 import warnings
 
 def get_data(link: str) -> dict:
-
-
     r = requests.get(link)
     print(f"{r.status_code} - {link}")
     soup = sp(r.text, "lxml")
 
     container = soup.find("div", class_="summary")
     product_id = container.find(class_ = 'wd-product-info').get("data-product-id")
-    product_title = container.find(class_ = 'product_title').text
+    product_title = container.find(class_ = 'product_title').text.replace("\n", "")
 
     product_info_raw = str(container.find(class_='woocommerce-product-details__short-description').find("p")).split(" : ")
     product_code = product_info_raw[1].strip().replace("</p>", "").split("  ")[0]
@@ -76,13 +74,14 @@ def main():
         for tag in loc_tags:
             final_links.append(tag.text.strip())
 
-
+    all_products = []
     for enum, link in enumerate(final_links):
         print(f"[{enum}/{len(final_links)}] {link}]")
         try:
             product_info = get_data(link)
             with open("completed.txt", "a") as file:
                 file.write(link + "\n")
+            all_products.append(product_info)
             print(f"\t{product_info.get("product_title")} - encontrado")
         except Exception as e:
             with open("error.txt", "a") as file:
@@ -90,8 +89,8 @@ def main():
             print(f"\tErro: {link}")
             continue
 
-        with open("final.json", "a") as file:
-            file.write(json.dumps(product_info))
+        with open("final.json", "w", encoding="utf-8") as file:
+            json.dump(all_products, file, ensure_ascii=False, indent=2)
 
 
 if __name__ == "__main__":
